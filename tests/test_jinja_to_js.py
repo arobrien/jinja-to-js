@@ -397,7 +397,7 @@ class Tests(unittest.TestCase):
             template_root=self.TEMPLATE_PATH,
             template_name=name,
             js_module_format='commonjs',
-            runtime_path=abspath('../jinja-to-js-runtime.js'),
+            runtime_path=abspath('jinja-to-js-runtime.js'),
             custom_filters=['unicode_snowmen']
         ).get_output()
 
