@@ -158,6 +158,13 @@ def temp_var_names_generator():
         x += 1
 
 
+def clean_path(file_path):
+    # Jinja2 doesn't accept Windows filepaths (but does output them!)
+    if os.name == 'nt':
+        return file_path.replace(os.path.sep, '/')
+    return file_path
+
+
 class JinjaToJS(object):
 
     def __init__(self,
@@ -227,9 +234,7 @@ class JinjaToJS(object):
 
         self._add_dependency(self.runtime_path, 'jinjaToJS')
 
-        # Jinja2 doesn't accept Windows filepaths
-        if os.name == 'nt':
-            self.template_name = self.template_name.replace(os.pathsep, '/')
+        self.template_name = clean_path(self.template_name)
 
         template_string, template_path, _ = self.environment.loader.get_source(
             self.environment, self.template_name
@@ -298,6 +303,7 @@ class JinjaToJS(object):
         Returns:
             str
         """
+        dependency = clean_path(dependency)
         if var_name is None:
             var_name = next(self.temp_var_names)
         # Don't add duplicate dependencies
@@ -977,9 +983,7 @@ class JinjaToJS(object):
                     if not include_path.startswith('.'):
                         include_path = './' + include_path
 
-                # Jinja2 doesn't accept Windows filepaths (but does output them!)
-                if os.name == 'nt':
-                    include_path = include_path.replace(os.pathsep, '/')
+                include_path = clean_path(include_path)
 
                 include_path = path.splitext(include_path)[0] + self.include_ext
                 include_var_name = self._get_depencency_var_name(include_path)
