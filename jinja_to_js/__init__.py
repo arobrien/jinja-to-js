@@ -342,7 +342,8 @@ class JinjaToJS(object):
                                     include_prefix=self.include_prefix,
                                     include_ext=self.include_ext,
                                     child_blocks=self.child_blocks,
-                                    dependencies=self.dependencies)
+                                    dependencies=self.dependencies,
+                                    custom_filters=self.custom_filters)
 
         # add the parent templates output to the current output
         self.output.write(parent_template.output.getvalue())
