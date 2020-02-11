@@ -18,7 +18,7 @@ from jinja2.loaders import FileSystemLoader
 
 import pytest
 
-from jinja_to_js import JinjaToJS, is_method_call
+from jinja_to_js import JinjaToJS, is_method_call, clean_path
 
 if "check_output" not in dir(subprocess):
     def check_output(*popenargs, **kwargs):
@@ -357,11 +357,11 @@ class Tests(unittest.TestCase):
         jinja_result = self.env.get_template(name).render(**kwargs).strip()
 
         # create the main template
-        path = self._compile_js_template(name)
+        path = clean_path(self._compile_js_template(name))
         template_args = [path]
 
         # create a temp file containing the data
-        data_file_path = self._write_to_temp_file(json.dumps(kwargs, cls=Encoder))
+        data_file_path = clean_path(self._write_to_temp_file(json.dumps(kwargs, cls=Encoder)))
 
         # if additional template are required e.g. for includes then create those too
         if additional:
@@ -372,7 +372,7 @@ class Tests(unittest.TestCase):
         try:
             js_result = check_output(
                 ['node',
-                 self.NODE_SCRIPT_PATH]
+                 clean_path(self.NODE_SCRIPT_PATH)]
                 + template_args +
                 [data_file_path]
             )
@@ -397,11 +397,11 @@ class Tests(unittest.TestCase):
             template_root=self.TEMPLATE_PATH,
             template_name=name,
             js_module_format='commonjs',
-            runtime_path=abspath('jinja-to-js-runtime.js'),
+            runtime_path=abspath('../jinja-to-js-runtime.js'),
             custom_filters=['unicode_snowmen']
         ).get_output()
 
-        target = self.temp_dir + '/' + os.path.splitext(name)[0] + '.js'
+        target = os.path.join(self.temp_dir, os.path.splitext(name)[0] + '.js')
 
         if not os.path.exists(os.path.dirname(target)):
             os.makedirs(os.path.dirname(target))
