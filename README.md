@@ -51,6 +51,7 @@ $ jinja_to_js --help
 usage: jinja_to_js [-h] [-o [OUTFILE]] [-m [JS_MODULE_FORMAT]]
                    [-r [RUNTIME_PATH]] [-p [INCLUDE_PREFIX]]
                    [-i [INCLUDE_EXT]]
+				   [-f [CUSTOM_FILTERS [CUSTOM_FILTERS ...]]] [-v]
                    template_root template_name
 
 Convert Jinja templates into JavaScript functions.
@@ -81,6 +82,9 @@ optional arguments:
                         Specifies the prefix to use for included templates.
   -i [INCLUDE_EXT], --include-ext [INCLUDE_EXT]
                         Specifies the extension to use for included templates.
+  -f [CUSTOM_FILTERS [CUSTOM_FILTERS ...]], --filters [CUSTOM_FILTERS [CUSTOM_FILTERS ...]]
+                        Specifies custom filters to be allowed.
+  -v, --verbose         Log to standard out. Use two for debug.
 ```
 
 ## Supported Features

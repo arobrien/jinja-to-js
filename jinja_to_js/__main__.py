@@ -78,7 +78,7 @@ def get_arg_parser():
 
     parser.add_argument(
         '-v', '--verbose', action='count',
-        help="log to standard out. Use -vv for debug level.",
+        help="Log to standard out. Use -vv for debug level.",
         default=0,
         dest="verbose"
     )
