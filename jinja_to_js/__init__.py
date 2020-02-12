@@ -751,10 +751,10 @@ class JinjaToJS(object):
                 self.output.write(' + "").toLowerCase()')
 
     def _process_filter_replace(self, node, **kwargs):
-        with self._interpolation():
-            with self._python_bool_wrapper(**kwargs) as new_kwargs:
-                if len(node.args) < 3:
-                    # Global replace, so use simple regexp/g for search variable
+        if len(node.args) < 3:
+            # Global replace, so use simple regexp/g for search variable
+            with self._interpolation():
+                with self._python_bool_wrapper(**kwargs) as new_kwargs:
                     self.output.write('(')
                     self._process_node(node.node, **new_kwargs)
                     self.output.write(' + "").replace(RegExp(')
@@ -762,9 +762,10 @@ class JinjaToJS(object):
                     self.output.write(' + "","g"),')
                     self._process_node(node.args[1], **new_kwargs)
                     self.output.write(')')
-                elif isinstance(node.args[2], nodes.Const):
-                    # we have a specific count for number of replace, so just chain .replace() calls
-                    # at the moment the only way is to use a for loop with single replace
+        elif isinstance(node.args[2], nodes.Const):
+            # we have a specific count for number of replace, so just chain .replace() calls
+            with self._interpolation():
+                with self._python_bool_wrapper(**kwargs) as new_kwargs:
                     self.output.write('(')
                     self._process_node(node.node, **new_kwargs)
                     self.output.write(' + "")')
@@ -772,14 +773,24 @@ class JinjaToJS(object):
                         self.output.write('.replace(')
                         self._process_args(node, **new_kwargs)
                         self.output.write(')')
-                else:
-                    # we have a variable count for number of replace
-                    # at the moment the only way is to use a for loop around a single replace
+        else:
+            # we have a variable count for number of replace
+            # i=0;a.replace(RegExp(search,"g"),function(match){return i++<n ? replace : match})
+            # an alternative to this approach would be to construct a for loop
+            tmp_i = next(self.temp_var_names)
+            tmp_match = next(self.temp_var_names)
+            self.output.write(f'{tmp_i}=0;')
+            with self._interpolation():
+                with self._python_bool_wrapper(**kwargs) as new_kwargs:
                     self.output.write('(')
                     self._process_node(node.node, **new_kwargs)
-                    self.output.write(' + "").replace(')
-                    self._process_args(node, **new_kwargs)
-                    self.output.write(')')
+                    self.output.write(' + "").replace(RegExp(')
+                    self._process_node(node.args[0], **new_kwargs)
+                    self.output.write(f' + "","g"),function({tmp_match}){{return {tmp_i}++<')
+                    self._process_node(node.args[2], **new_kwargs)
+                    self.output.write(' ? ')
+                    self._process_node(node.args[1], **new_kwargs)
+                    self.output.write(f' : {tmp_match}}})')
 
     def _process_filter_slice(self, node, **kwargs):
         with self._interpolation():
