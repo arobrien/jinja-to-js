@@ -272,6 +272,8 @@ class JinjaToJS(object):
             # check for duplicate blocks in this template
             if block.name in local_blocks:
                 raise Exception(f"block {block.name!r} defined twice", block.lineno)
+            # set origin_template property
+            block.origin_template = self.template_name
             local_blocks.add(block.name)
 
             # if not already in the block list then this is the first time a
@@ -382,7 +384,7 @@ class JinjaToJS(object):
         """
         Processes a block e.g. `{% block my_block %}{% endblock %}`
         """
-        logging.info('Processing block %s in %s', block.name, self.template_name)
+        logging.info('Processing block %s in %s', block.name, block.origin_template)
         
         # only process if we are an explicit parent call, or the last child with this name
         if kwargs.get('explicit_super', False):
@@ -403,7 +405,7 @@ class JinjaToJS(object):
             for node in block.body:
                 self._process_node(node, **kwargs)
 
-        logging.info('End of block %s in %s', block.name, self.template_name)
+        logging.info('End of block %s in %s', block.name, block.origin_template)
         self.current_block = outer_block
 
     def _process_output(self, node, **kwargs):
@@ -673,7 +675,8 @@ class JinjaToJS(object):
                     subnode = subnode.node
                     super_block = super_block.super_block
 
-                logging.debug('Process call to %s x super() from block %s in %s', levels, self.current_block.name, self.template_name)
+                logging.debug('Process call to %s x super() from block %s in %s', levels,
+                              self.current_block.name, self.current_block.origin_template)
                 self._process_node(super_block, **kwargs)
 
         else:
