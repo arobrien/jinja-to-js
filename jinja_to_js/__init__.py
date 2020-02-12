@@ -779,18 +779,18 @@ class JinjaToJS(object):
             # an alternative to this approach would be to construct a for loop
             tmp_i = next(self.temp_var_names)
             tmp_match = next(self.temp_var_names)
-            self.output.write(f'{tmp_i}=0;')
+            self.output.write('{}=0;'.format(tmp_i))
             with self._interpolation():
                 with self._python_bool_wrapper(**kwargs) as new_kwargs:
                     self.output.write('(')
                     self._process_node(node.node, **new_kwargs)
                     self.output.write(' + "").replace(RegExp(')
                     self._process_node(node.args[0], **new_kwargs)
-                    self.output.write(f' + "","g"),function({tmp_match}){{return {tmp_i}++<')
+                    self.output.write(' + "","g"),function({}){{return {}++<'.format(tmp_match,tmp_i))
                     self._process_node(node.args[2], **new_kwargs)
                     self.output.write(' ? ')
                     self._process_node(node.args[1], **new_kwargs)
-                    self.output.write(f' : {tmp_match}}})')
+                    self.output.write(' : {}}})'.format(tmp_match))
 
     def _process_filter_slice(self, node, **kwargs):
         with self._interpolation():
