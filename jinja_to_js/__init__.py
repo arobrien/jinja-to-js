@@ -180,6 +180,16 @@ class JinjaToJS(object):
                  dependencies=None,
                  custom_filters=None):
         """
+        Processing starts at the last child template, and parent templates are processed
+        each time an extends tag is encountered.
+        
+        Inheritance is handled by keeping a master dict of all blocks (from all templates)
+        with the name forming a key to a chain from child->parent->grandparent via the
+        'super_block' attribute of each block.
+
+        After each template is parsed by jinja, the dict of blocks is updated and
+        inheritance chains extended as appropriate.
+        
         Args:
             template_root (str): The path to where templates should be loaded from.
             template_name (str): The name of the template to compile (relative to `template_root`).
@@ -198,8 +208,7 @@ class JinjaToJS(object):
                                          '.js' extension. If you want to use an extension, say
                                          '.template' then set this option to a string including
                                          the leading '.'
-            child_blocks (dict, optional): Used internally when handling templates that extend
-                                           other templates.
+            child_blocks (dict, optional): A dict of all the already defined templates.
             dependencies (list of tuple, optional): Used internally when handling templates that
                                                     extend other templates.
             custom_filters (list of str, optional): List of custom filters which should be allowed.
@@ -215,7 +224,6 @@ class JinjaToJS(object):
         self.stored_names = set()
         self.temp_var_names = temp_var_names_generator()
         self.state = STATE_DEFAULT
-        self.child_blocks = child_blocks or {}
         self.dependencies = dependencies or []
         self._runtime_function_cache = []
         self.js_module_format = js_module_format
@@ -223,7 +231,7 @@ class JinjaToJS(object):
         self.include_prefix = include_prefix
         self.include_ext = include_ext
         self.template_root = template_root
-        self.template_name = template_name
+        self.template_name = clean_path(template_name)
         self.custom_filters = custom_filters or []
 
         # The name of the JavaScript function that will output this template. By using a named
@@ -235,8 +243,6 @@ class JinjaToJS(object):
         self.context_name = 'context'
 
         self._add_dependency(self.runtime_path, 'jinjaToJS')
-
-        self.template_name = clean_path(self.template_name)
 
         template_string, template_path, _ = self.environment.loader.get_source(
             self.environment, self.template_name
@@ -251,9 +257,37 @@ class JinjaToJS(object):
                 'The js_module_format option must be one of: %s' % JS_MODULE_FORMATS.keys()
             )
 
-        logging.info('Parsing template: {}'.format(template_string))
+        logging.info('Parsing template: %s', template_string)
         self.ast = self.environment.parse(template_string)
 
+        # re-use the passed blocks if we are not the child template
+        if child_blocks is None:
+            # we are the first template to be processed, so create the master blocks list
+            self.blocks = {}
+        else:
+            self.blocks = child_blocks
+
+        local_blocks = set()
+        for block in self.ast.find_all(nodes.Block):
+            # check for duplicate blocks in this template
+            if block.name in local_blocks:
+                raise Exception(f"block {block.name!r} defined twice", block.lineno)
+            local_blocks.add(block.name)
+
+            # if not already in the block list then this is the first time a
+            # block with this name has been encountered.
+            if block.name not in self.blocks:
+                self.blocks[block.name] = block
+            else:
+                # otherwise we have seen this block before, so we need to find the last
+                # super_block and add the block from this template to the end of the list
+                last_super = self.blocks.get(block.name)
+                while hasattr(last_super, 'super_block'):
+                    last_super = last_super.super_block
+                last_super.super_block = block
+
+        self.current_block = None
+        
         try:
             for node in self.ast.body:
                 self._process_node(node)
@@ -326,24 +360,7 @@ class JinjaToJS(object):
         """
         Processes an extends block e.g. `{% extends "some/template.jinja" %}`
         """
-        logging.debug('Extends parent template: {}'.format(node.template.value))
-
-        # find all the blocks in this template
-        for b in self.ast.find_all(nodes.Block):
-
-            # if not already in `child_blocks` then this is the first time a
-            # block with this name has been encountered.
-            if b.name not in self.child_blocks:
-                self.child_blocks[b.name] = b
-            else:
-
-                # otherwise we have seen this block before, so we need to find the last
-                # super_block and add the block from this template to the end.
-                block = self.child_blocks.get(b.name)
-                while hasattr(block, 'super_block'):
-                    block = block.super_block
-                block.super_block = b
-
+        logging.debug('Extends parent template: %s', node.template.value)
         # load the parent template
         parent_template = JinjaToJS(template_root=self.template_root,
                                     template_name=node.template.value,
@@ -351,7 +368,7 @@ class JinjaToJS(object):
                                     runtime_path=self.runtime_path,
                                     include_prefix=self.include_prefix,
                                     include_ext=self.include_ext,
-                                    child_blocks=self.child_blocks,
+                                    child_blocks=self.blocks,
                                     dependencies=self.dependencies,
                                     custom_filters=self.custom_filters)
 
@@ -361,40 +378,33 @@ class JinjaToJS(object):
         # Raise an exception so we stop parsing this template
         raise ExtendsException
 
-    def _process_block(self, node, **kwargs):
+    def _process_block(self, block, **kwargs):
         """
         Processes a block e.g. `{% block my_block %}{% endblock %}`
         """
-        logging.debug('Processing block: %s', node.name)
+        logging.info('Processing block %s in %s', block.name, self.template_name)
+        
+        # only process if we are an explicit parent call, or the last child with this name
+        if kwargs.get('explicit_super', False):
+            logging.debug('Processing block %s content as explicit super() call', block.name)
+        elif block == self.blocks.get(block.name):
+            logging.debug('Processing block %s content as last child', block.name)
+        else:
+            logging.debug('Calling last child of block %s', block.name)
+            self._process_node(self.blocks.get(block.name), **kwargs)
+            return
 
-        # check if this node already has a 'super_block' attribute
-        if not hasattr(node, 'super_block'):
+        outer_block = self.current_block
+        self.current_block = block
 
-            # since it doesn't it must be the last block in the inheritance chain
-            node.super_block = None
+        # process the block 
+        # if this block # calls super() it will be handled by `_process_call`
+        with option(kwargs, explicit_super=False):
+            for node in block.body:
+                self._process_node(node, **kwargs)
 
-            # see if there has been a child block defined - if there is this
-            # will be the first block in the inheritance chain
-            child_block = self.child_blocks.get(node.name)
-
-            if child_block:
-
-                # we have child nodes so we need to set `node` as the
-                # super of the last one in the chain
-                last_block = child_block
-                while hasattr(last_block, 'super_block'):
-                    last_block = child_block.super_block
-
-                # once we have found it, set this node as it's super block
-                last_block.super_block = node
-
-                # this is the node we want to process as it's the first in the inheritance chain
-                node = child_block
-
-        # process the block passing the it's super along, if this block
-        # calls super() it will be handled by `_process_call`
-        for n in node.body:
-            self._process_node(n, super_block=node.super_block, **kwargs)
+        logging.info('End of block %s in %s', block.name, self.template_name)
+        self.current_block = outer_block
 
     def _process_output(self, node, **kwargs):
         """
@@ -638,17 +648,24 @@ class JinjaToJS(object):
                 self.output.write(',')
         self.output.write(']')
 
-    def _process_call(self, node, super_block=None, **kwargs):
+    def _process_call(self, node, **kwargs):
         if is_method_call(node, DICT_ITER_METHODS):
             # special case for dict methods
             self._process_node(node.node.node, **kwargs)
 
         elif is_method_call(node, 'super'):
             # special case for the super() method which is available inside blocks
-            if not super_block:
-                raise Exception('super() called outside of a block with a parent.')
-            logging.debug('explicit call to super(): %s', super_block.name)
-            self._process_node(super_block, **kwargs)
+            if not (hasattr(self.current_block, 'super_block') and self.current_block.super_block):
+                if self.current_block:
+                    current_block_name = self.current_block.name
+                else:
+                    current_block_name = 'None'
+                raise Exception('super() called outside of a block with a parent. (in block {})'.format(current_block_name))
+            with option(kwargs, explicit_super=True):
+                # TODO: handle chained super.super()
+                super_block = self.current_block.super_block
+                logging.debug('Process call to super() from block %s in %s', self.current_block.name, self.template_name)
+                self._process_node(super_block, **kwargs)
 
         else:
             # just a normal function call on a context variable

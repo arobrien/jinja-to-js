@@ -118,7 +118,7 @@ class Tests(unittest.TestCase):
         with pytest.raises(Exception) as e:
             JinjaToJS(template_root=self.TEMPLATE_PATH,
                       template_name='super_called_outside_of_block.jinja')
-        assert str(e.value) == 'super() called outside of a block with a parent.'
+        assert str(e.value) == 'super() called outside of a block with a parent. (in block foo)'
 
     def test_if(self):
         for foo in [True, False]:

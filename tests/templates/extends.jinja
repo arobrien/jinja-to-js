@@ -5,9 +5,9 @@ Should not be output.
 {% block four %}
     four child
     {{ super() }}
-
     {% block three %}
         three child
         {{ super() }}
     {% endblock three %}
+    {{ super() }}
 {% endblock four %}
