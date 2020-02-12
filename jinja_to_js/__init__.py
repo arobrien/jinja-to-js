@@ -6,7 +6,6 @@ import logging
 import json
 import re
 import os
-import sys
 
 from os import path
 
