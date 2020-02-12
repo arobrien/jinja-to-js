@@ -3,6 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import sys
 
 import argparse
+import logging
 
 from . import JinjaToJS
 
@@ -75,13 +76,28 @@ def get_arg_parser():
         dest="custom_filters"
     )
 
+    parser.add_argument(
+        '-v', '--verbose', action='count',
+        help="log to standard out. Use -vv for debug level.",
+        default=0,
+        dest="verbose"
+    )
+
     return parser
+
+
+def setup_logging(options):
+    if options.verbose:
+        level = logging.INFO
+        if options.verbose > 1:
+            level = logging.DEBUG
+        logging.basicConfig(format='%(levelname)-8s:%(message)s', level=level)
 
 
 def get_init_kwargs(options):
     kwargs = {}
     for key, value in vars(options).items():
-        if key != 'outfile':
+        if key not in ('outfile', 'verbose'):
             kwargs[key] = value
     return kwargs
 
@@ -89,6 +105,7 @@ def get_init_kwargs(options):
 def main():
     parser = get_arg_parser()
     options = parser.parse_args()
+    setup_logging(options)
     compiler = JinjaToJS(**get_init_kwargs(options))
     options.outfile.write(compiler.get_output())
     return 0

@@ -2,9 +2,11 @@
 from __future__ import unicode_literals
 
 import contextlib
+import logging
 import json
 import re
 import os
+import sys
 
 from os import path
 
@@ -244,6 +246,7 @@ class JinjaToJS(object):
                 'The js_module_format option must be one of: %s' % JS_MODULE_FORMATS.keys()
             )
 
+        logging.info('Parsing template: {}'.format(template_string))
         self.ast = self.environment.parse(template_string)
 
         try:
@@ -317,6 +320,7 @@ class JinjaToJS(object):
         """
         Processes an extends block e.g. `{% extends "some/template.jinja" %}`
         """
+        logging.debug('Extends parent template: {}'.format(node.template.value))
 
         # find all the blocks in this template
         for b in self.ast.find_all(nodes.Block):
@@ -354,6 +358,7 @@ class JinjaToJS(object):
         """
         Processes a block e.g. `{% block my_block %}{% endblock %}`
         """
+        logging.debug('Processing block: %s', node.name)
 
         # check if this node already has a 'super_block' attribute
         if not hasattr(node, 'super_block'):
@@ -635,6 +640,7 @@ class JinjaToJS(object):
             # special case for the super() method which is available inside blocks
             if not super_block:
                 raise Exception('super() called outside of a block with a parent.')
+            logging.debug('explicit call to super(): %s', super_block.name)
             self._process_node(super_block, **kwargs)
 
         else:
