@@ -786,7 +786,10 @@ class JinjaToJS(object):
                     self._process_node(node.node, **new_kwargs)
                     self.output.write(' + "").replace(RegExp(')
                     self._process_node(node.args[0], **new_kwargs)
-                    self.output.write(' + "","g"),function({}){{return {}++<'.format(tmp_match,tmp_i))
+                    self.output.write(' + "","g"),function({}){{return {}++<'.format(
+                        tmp_match,
+                        tmp_i
+                    ))
                     self._process_node(node.args[2], **new_kwargs)
                     self.output.write(' ? ')
                     self._process_node(node.args[1], **new_kwargs)
