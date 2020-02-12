@@ -750,6 +750,15 @@ class JinjaToJS(object):
                 self._process_node(node.node, **new_kwargs)
                 self.output.write(' + "").toLowerCase()')
 
+    def _process_filter_replace(self, node, **kwargs):
+        with self._interpolation():
+            with self._python_bool_wrapper(**kwargs) as new_kwargs:
+                self.output.write('(')
+                self._process_node(node.node, **new_kwargs)
+                self.output.write(' + "").replace(')
+                self._process_args(node, **new_kwargs)
+                self.output.write(')')
+
     def _process_filter_slice(self, node, **kwargs):
         with self._interpolation():
             with self._python_bool_wrapper(**kwargs) as new_kwargs:

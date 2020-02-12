@@ -122,6 +122,7 @@ optional arguments:
 * `last` - [docs](http://jinja.pocoo.org/docs/dev/templates/#last)
 * `length` - [docs](http://jinja.pocoo.org/docs/dev/templates/#length)
 * `lower` - [docs](http://jinja.pocoo.org/docs/dev/templates/#lower)
+* `replace` - [docs](http://jinja.pocoo.org/docs/dev/templates/#replace)
 * `slice` - [docs](http://jinja.pocoo.org/docs/dev/templates/#slice)
 * `title` - [docs](http://jinja.pocoo.org/docs/dev/templates/#title)
 * `trim` - [docs](http://jinja.pocoo.org/docs/dev/templates/#trim)
