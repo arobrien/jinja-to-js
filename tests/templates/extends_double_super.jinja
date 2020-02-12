@@ -1,0 +1,12 @@
+{% extends 'extends.jinja' %}
+
+Should not be output.
+
+{% block four %}
+    four grandchild
+    {{ super() }}
+	four grandchild again
+    {{ super.super() }}
+	four grandchild thrice
+	{{ super.super.super() }}
+{% endblock four %}

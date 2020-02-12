@@ -283,6 +283,9 @@ class Tests(unittest.TestCase):
     def test_extends(self):
         self._run_test('extends.jinja')
 
+    def test_extends_double_super(self):
+        self._run_test('extends_double_super.jinja')
+
     def test_logic(self):
         self._run_test('logic.jinja', foo=True, bar=True, baz=True)
         self._run_test('logic.jinja', foo=True, bar=True, baz=False)

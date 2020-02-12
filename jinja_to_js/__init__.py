@@ -664,7 +664,16 @@ class JinjaToJS(object):
             with option(kwargs, explicit_super=True):
                 # TODO: handle chained super.super()
                 super_block = self.current_block.super_block
-                logging.debug('Process call to super() from block %s in %s', self.current_block.name, self.template_name)
+
+                levels = 1
+                subnode = node
+                while isinstance(subnode.node, nodes.Getattr):
+                    # e.g. super.super()
+                    levels += 1
+                    subnode = subnode.node
+                    super_block = super_block.super_block
+
+                logging.debug('Process call to %s x super() from block %s in %s', levels, self.current_block.name, self.template_name)
                 self._process_node(super_block, **kwargs)
 
         else:
