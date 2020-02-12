@@ -866,7 +866,6 @@ class JinjaToJS(object):
                 self.output.write(OPERANDS.get(operand.op))
                 self._process_node(operand.expr, **kwargs)
 
-
     def _process_operand(self, node, **kwargs):
         self.output.write(OPERANDS.get(node.op))
         self._process_node(node.expr, **kwargs)
