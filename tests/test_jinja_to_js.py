@@ -244,7 +244,8 @@ class Tests(unittest.TestCase):
         self._run_test('tests.jinja',
                        age=30, fn=lambda x: x, not_a_fn=None, i_am_none=None,
                        upper_str='HELLO', lower_str='hello',
-                       a_mapping=dict(key='value'))
+                       a_mapping=dict(key='value'),
+                       a_list=[3, 4, 99])
 
     def test_truthy_falsey_values(self):
         self._run_test('truthy_falsey_values.jinja',

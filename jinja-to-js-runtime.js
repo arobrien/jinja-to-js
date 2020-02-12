@@ -287,6 +287,23 @@
             return false;
         },
 
+        isIn: function (objA, objB) {
+            // we can determine the type and use the correct method, or just try-catch all of them
+            // Array or string: objB.includes(objA)
+            // Set: objB.has(objA)
+            // Object or Map: objA in objB   - this won't throw for a valid object
+            // undefined: jinja throws an error, so we can too: TypeError: argument of type 'NoneType' is not iterable
+            try {
+                return objB.includes(objA);
+            } catch (e) {}
+            
+            try {
+                return objB.has(objA);
+            } catch (e) {}
+            
+            return objA in objB;
+        },
+        
         escape: function (str) {
             str = str == null ? '' : '' + str;
             return ESCAPE_TEST_REGEX.test(str) ? str.replace(ESCAPE_REPLACE_REGEX, escaper) : str;

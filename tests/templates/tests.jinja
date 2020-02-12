@@ -49,3 +49,27 @@
 {% if 5 is number %}
     5 is a number
 {% endif %}
+
+{% if key in a_mapping %}
+	key in a_mapping
+{% endif %}
+
+{% if bad_key in a_mapping %}
+	bad_key should not execute
+{% endif %}
+
+{% if 99 in a_list %}
+	99 in a_list
+{% endif %}
+
+{% if -1 in a_list %}
+	-1 should not execute
+{% endif %}
+
+{% if "e" in lower_str %}
+	"e" in lower_str
+{% endif %}
+
+{% if "Z" in lower_str %}
+	"Z" should not execute
+{% endif %}

@@ -851,18 +851,21 @@ class JinjaToJS(object):
                 if operand.op == 'ne':
                     self.output.write('!')
                 self.output.write('__runtime.isEqual(')
-
-            self._process_node(node.expr, **kwargs)
-
-            if use_is_equal_function:
+                self._process_node(node.expr, **kwargs)
                 self.output.write(',')
-            else:
-                self.output.write(OPERANDS.get(operand.op))
-
-            self._process_node(operand.expr, **kwargs)
-
-            if use_is_equal_function:
+                self._process_node(operand.expr, **kwargs)
                 self.output.write(')')
+            elif operand.op == 'in':
+                self.output.write('__runtime.isIn(')
+                self._process_node(node.expr, **kwargs)
+                self.output.write(',')
+                self._process_node(operand.expr, **kwargs)
+                self.output.write(')')
+            else:
+                self._process_node(node.expr, **kwargs)
+                self.output.write(OPERANDS.get(operand.op))
+                self._process_node(operand.expr, **kwargs)
+
 
     def _process_operand(self, node, **kwargs):
         self.output.write(OPERANDS.get(node.op))

@@ -109,6 +109,7 @@ optional arguments:
 * `lower`
 * `string`
 * `mapping`
+* `in` - [docs](http://jinja.pocoo.org/docs/dev/templates/#in)
 
 ### Supported filters
 * `safe` - [docs](http://jinja.pocoo.org/docs/dev/templates/#safe)
