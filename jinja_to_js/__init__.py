@@ -245,7 +245,7 @@ class JinjaToJS(object):
                 'The js_module_format option must be one of: %s' % JS_MODULE_FORMATS.keys()
             )
 
-        logging.info('Parsing template: {}'.format(template_string))
+        logging.info('Parsing template: {}'.format(self.template_name))
         self.ast = self.environment.parse(template_string)
 
         try:
