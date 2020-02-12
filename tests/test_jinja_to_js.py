@@ -215,7 +215,7 @@ class Tests(unittest.TestCase):
         self._run_test('filters/lower.jinja', shouty_text='I AM SHOUTING')
 
     def test_replace_filter(self):
-        self._run_test('filters/replace.jinja', some_text='testing is fun', ddd='ddddddd', isnone=None)
+        self._run_test('filters/replace.jinja', some_text='testing is fun', ddd='ddddddd', isnone=None, n_replace=3)
 
     def test_slice_filter(self):
         self._run_test('filters/slice.jinja', items=[

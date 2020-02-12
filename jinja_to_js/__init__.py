@@ -753,11 +753,33 @@ class JinjaToJS(object):
     def _process_filter_replace(self, node, **kwargs):
         with self._interpolation():
             with self._python_bool_wrapper(**kwargs) as new_kwargs:
-                self.output.write('(')
-                self._process_node(node.node, **new_kwargs)
-                self.output.write(' + "").replace(')
-                self._process_args(node, **new_kwargs)
-                self.output.write(')')
+                if len(node.args) < 3:
+                    # Global replace, so use simple regexp/g for search variable
+                    self.output.write('(')
+                    self._process_node(node.node, **new_kwargs)
+                    self.output.write(' + "").replace(RegExp(')
+                    self._process_node(node.args[0], **new_kwargs)
+                    self.output.write(' + "","g"),')
+                    self._process_node(node.args[1], **new_kwargs)
+                    self.output.write(')')
+                elif isinstance(node.args[2], nodes.Const):
+                    # we have a specific count for number of replace, so just chain .replace() calls
+                    # at the moment the only way is to use a for loop with single replace
+                    self.output.write('(')
+                    self._process_node(node.node, **new_kwargs)
+                    self.output.write(' + "")')
+                    for i in range(node.args[2].value):
+                        self.output.write('.replace(')
+                        self._process_args(node, **new_kwargs)
+                        self.output.write(')')
+                else:
+                    # we have a variable count for number of replace
+                    # at the moment the only way is to use a for loop around a single replace
+                    self.output.write('(')
+                    self._process_node(node.node, **new_kwargs)
+                    self.output.write(' + "").replace(')
+                    self._process_args(node, **new_kwargs)
+                    self.output.write(')')
 
     def _process_filter_slice(self, node, **kwargs):
         with self._interpolation():
