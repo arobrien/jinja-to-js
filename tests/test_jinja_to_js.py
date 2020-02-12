@@ -334,6 +334,14 @@ class Tests(unittest.TestCase):
 
         self._run_test('custom_filters.jinja')
 
+    def test_extends_custom_filters(self):
+        def unicode_snowmen(value):
+            return ''.join(['☃' for x in value])
+
+        self.env.filters['unicode_snowmen'] = unicode_snowmen
+
+        self._run_test('extends_custom_filters.jinja')
+
     def test_custom_global(self):
         def convert_to_uppercase(value):
             return value.upper()
