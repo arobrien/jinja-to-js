@@ -342,6 +342,9 @@ class Tests(unittest.TestCase):
 
         self._run_test('custom_global.jinja')
 
+    def test_literal_dict(self):
+        self._run_test('literal_dict.jinja', value1=3, value2='a')
+
     def test_extends_es6(self):
         compiler = JinjaToJS(template_root=self.TEMPLATE_PATH,
                              template_name='extends.jinja',

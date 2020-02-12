@@ -889,6 +889,18 @@ class JinjaToJS(object):
                 self.output.write(',')
         self.output.write(']')
 
+    def _process_dict(self, node, **kwargs):
+        self.output.write('{')
+        for i, item in enumerate(node.items):
+            if not isinstance(item, nodes.Pair):
+                raise ValueError("Literal dict {} can only contain key: value pairs, not %s", item)
+            self._process_node(item.key, **kwargs)
+            self.output.write(':')
+            self._process_node(item.value, **kwargs)
+            if i < len(node.items) - 1:
+                self.output.write(',')
+        self.output.write('}')
+
     def _process_test(self, node, **kwargs):
         with option(kwargs, use_python_bool_wrapper=False):
             method_name = getattr(self, '_process_test_%s' % node.name, None)
